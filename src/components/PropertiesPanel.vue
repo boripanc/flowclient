@@ -36,7 +36,7 @@ function closePanel() {
 </script>
 
 <template>
-  <aside class="properties-panel" v-if="node">
+  <aside class="properties-panel" v-if="node && node.data">
     <div class="panel-header">
       <div class="panel-title-row">
         <div

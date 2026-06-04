@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { watch } from 'vue'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
-import type { Connection, NodeMouseEvent, NodeChange, EdgeChange } from '@vue-flow/core'
+import type { NodeMouseEvent } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
@@ -11,7 +11,7 @@ import '@vue-flow/controls/dist/style.css'
 import '@vue-flow/minimap/dist/style.css'
 import WorkflowNode from './WorkflowNode.vue'
 import { useWorkflowStore } from '@/stores/workflow'
-import type { NodeTypeDefinition, WorkflowNodeData } from '@/types/workflow'
+import type { NodeTypeDefinition } from '@/types/workflow'
 
 const store = useWorkflowStore()
 

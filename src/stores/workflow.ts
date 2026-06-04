@@ -15,9 +15,9 @@ export interface LogEntry {
 }
 
 export const useWorkflowStore = defineStore('workflow', () => {
-  const nodes = ref<Node<WorkflowNodeData>[]>([])
+  const nodes = ref([]) as { value: Node<WorkflowNodeData>[] }
   const edges = ref<Edge[]>([])
-  const selectedNode = ref<Node<WorkflowNodeData> | null>(null)
+  const selectedNode = ref(null) as { value: Node<WorkflowNodeData> | null }
   const isExecuting = ref(false)
   const logs = ref<LogEntry[]>([])
   const triggerInput = ref('')
@@ -27,7 +27,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
   let logIdCounter = 0
 
   const hasTrigger = computed(() =>
-    nodes.value.some((n) => n.data.category === 'trigger')
+    nodes.value.some((n) => n.data?.category === 'trigger')
   )
 
   function addLog(nodeId: string, nodeLabel: string, type: LogEntry['type'], message: string) {
@@ -68,7 +68,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
         config: {},
       },
     }
-    nodes.value = [...nodes.value, newNode]
+    nodes.value.push(newNode)
     return newNode
   }
 
@@ -101,8 +101,8 @@ export const useWorkflowStore = defineStore('workflow', () => {
 
   function updateNodeData(nodeId: string, data: Partial<WorkflowNodeData>) {
     const node = nodes.value.find((n) => n.id === nodeId)
-    if (node) {
-      node.data = { ...node.data, ...data }
+    if (node && node.data) {
+      node.data = { ...node.data, ...data } as WorkflowNodeData
     }
   }
 
@@ -141,7 +141,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
   }
 
   async function executeWorkflow() {
-    const trigger = nodes.value.find((n) => n.data.category === 'trigger')
+    const trigger = nodes.value.find((n) => n.data?.category === 'trigger')
     if (!trigger) {
       addLog('system', 'System', 'error', 'No trigger node found. Add a trigger to start the workflow.')
       return
