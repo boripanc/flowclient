@@ -15,9 +15,9 @@ export interface LogEntry {
 }
 
 export const useWorkflowStore = defineStore('workflow', () => {
-  const nodes = ref([]) as { value: Node<WorkflowNodeData>[] }
+  const nodes = ref<any[]>([])
   const edges = ref<Edge[]>([])
-  const selectedNode = ref(null) as { value: Node<WorkflowNodeData> | null }
+  const selectedNode = ref<any>(null)
   const isExecuting = ref(false)
   const logs = ref<LogEntry[]>([])
   const triggerInput = ref('')
