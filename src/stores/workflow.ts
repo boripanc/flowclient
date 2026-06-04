@@ -167,6 +167,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
   }
 
   async function executeNode(node: Node<WorkflowNodeData>, data: any) {
+    if (!node.data) return
     setNodeStatus(node.id, 'running')
     addLog(node.id, node.data.label, 'info', 'Executing...')
 
