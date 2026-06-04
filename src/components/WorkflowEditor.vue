@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { watch } from 'vue'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 import type { NodeMouseEvent } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -17,6 +16,15 @@ const store = useWorkflowStore()
 
 const { project, getEdges, addEdges, onConnect } = useVueFlow()
 
+// Validate connection: only allow one edge per source handle
+function isValidConnection(connection: any): boolean {
+  const sourceHandle = connection.sourceHandle ?? null
+  const existing = getEdges.value.find(
+    (e) => e.source === connection.source && (e.sourceHandle ?? null) === sourceHandle
+  )
+  return !existing
+}
+
 // When a connection is made, add the edge with sourceHandle preserved
 onConnect((connection) => {
   const sourceHandle = connection.sourceHandle ?? undefined
@@ -33,19 +41,6 @@ onConnect((connection) => {
     style: { stroke: 'var(--color-primary)', strokeWidth: 2 },
   }])
 })
-
-// Sync Vue Flow's internal edges to our store whenever they change
-watch(getEdges, (flowEdges) => {
-  store.edges = flowEdges.map((e) => ({
-    id: e.id,
-    source: e.source,
-    target: e.target,
-    sourceHandle: e.sourceHandle,
-    targetHandle: e.targetHandle,
-    animated: e.animated,
-    style: e.style,
-  }))
-}, { deep: true })
 
 function onDragOver(event: DragEvent) {
   event.preventDefault()
@@ -88,8 +83,9 @@ function onPaneClick() {
   <div class="editor-canvas" @drop="onDrop" @dragover="onDragOver">
     <VueFlow
       v-model:nodes="store.nodes"
-      :edges="store.edges"
+      v-model:edges="store.edges"
       :default-viewport="{ zoom: 1, x: 0, y: 0 }"
+      :is-valid-connection="isValidConnection"
       @node-click="onNodeClick"
       @pane-click="onPaneClick"
     >
