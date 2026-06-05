@@ -3,16 +3,16 @@ import { ref } from 'vue'
 import { useWorkflowStore } from '@/stores/workflow'
 
 const store = useWorkflowStore()
-const isDeploying = ref(false)
-const deployStatus = ref<'idle' | 'success' | 'error'>('idle')
+const isSaving = ref(false)
+const saveStatus = ref<'idle' | 'success' | 'error'>('idle')
 
-async function deployWorkflow() {
+async function saveFlow() {
   if (!store.hasTrigger) return
 
-  isDeploying.value = true
-  deployStatus.value = 'idle'
+  isSaving.value = true
+  saveStatus.value = 'idle'
 
-  store.addLog('system', 'System', 'info', '🚀 Deploying workflow...')
+  store.addLog('system', 'System', 'info', '💾 Saving workflow...')
 
   try {
     const payload = {
@@ -40,20 +40,20 @@ async function deployWorkflow() {
 
     if (!response.ok) {
       const err = await response.json()
-      throw new Error(err.error || 'Deploy failed')
+      throw new Error(err.error || 'Save failed')
     }
 
     const result = await response.json()
-    deployStatus.value = 'success'
-    store.addLog('system', 'System', 'success', `✓ Workflow deployed: ${result.workflow.id}`)
+    saveStatus.value = 'success'
+    store.addLog('system', 'System', 'success', `✓ Workflow saved: ${result.workflow.id}`)
   } catch (error: any) {
-    deployStatus.value = 'error'
-    store.addLog('system', 'System', 'error', `Deploy failed: ${error.message}`)
+    saveStatus.value = 'error'
+    store.addLog('system', 'System', 'error', `Save failed: ${error.message}`)
   }
 
   setTimeout(() => {
-    isDeploying.value = false
-    deployStatus.value = 'idle'
+    isSaving.value = false
+    saveStatus.value = 'idle'
   }, 2000)
 }
 </script>
@@ -81,13 +81,13 @@ async function deployWorkflow() {
         {{ store.isExecuting ? '⏳ Running...' : '▶ Execute' }}
       </button>
       <button
-        class="btn btn-deploy"
-        :class="{ success: deployStatus === 'success' }"
-        :disabled="isDeploying || !store.hasTrigger"
-        @click="deployWorkflow()"
+        class="btn btn-save"
+        :class="{ success: saveStatus === 'success', error: saveStatus === 'error' }"
+        :disabled="isSaving || !store.hasTrigger"
+        @click="saveFlow()"
       >
-        <span v-if="isDeploying" class="deploy-spinner"></span>
-        {{ isDeploying ? 'Deploying...' : deployStatus === 'success' ? '✓ Deployed' : '🚀 Deploy' }}
+        <span v-if="isSaving" class="save-spinner"></span>
+        {{ isSaving ? 'Saving...' : saveStatus === 'success' ? '✓ Saved' : saveStatus === 'error' ? '✕ Failed' : '💾 Save Flow' }}
       </button>
     </div>
   </header>
@@ -194,25 +194,29 @@ async function deployWorkflow() {
   color: var(--color-text);
 }
 
-.btn-deploy {
+.btn-save {
   background: var(--color-success);
   color: white;
 }
 
-.btn-deploy:hover:not(:disabled) {
+.btn-save:hover:not(:disabled) {
   background: #059669;
 }
 
-.btn-deploy:disabled {
+.btn-save:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.btn-deploy.success {
+.btn-save.success {
   background: #059669;
 }
 
-.deploy-spinner {
+.btn-save.error {
+  background: var(--color-danger);
+}
+
+.save-spinner {
   display: inline-block;
   width: 12px;
   height: 12px;
