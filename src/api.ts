@@ -5,7 +5,7 @@ export const api = {
     list: () => fetch(`${BASE_URL}/api/workflows`),
     get: (id: string) => fetch(`${BASE_URL}/api/workflows/${id}`),
     create: (payload: unknown) =>
-      fetch(`${BASE_URL}/api/workflows/deploy`, {
+      fetch(`${BASE_URL}/api/workflows/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
