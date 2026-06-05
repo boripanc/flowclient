@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useWorkflowStore } from '@/stores/workflow'
+import { api } from '@/api'
 
+const props = defineProps<{
+  flowId?: string
+}>()
+
+const router = useRouter()
 const store = useWorkflowStore()
 const isSaving = ref(false)
 const saveStatus = ref<'idle' | 'success' | 'error'>('idle')
@@ -16,14 +23,14 @@ async function saveFlow() {
 
   try {
     const payload = {
-      name: 'My Workflow',
-      nodes: store.nodes.map((n) => ({
+      name: workflowName.value,
+      nodes: store.nodes.map((n: any) => ({
         id: n.id,
         type: n.type,
         position: n.position,
         data: n.data,
       })),
-      edges: store.edges.map((e) => ({
+      edges: store.edges.map((e: any) => ({
         id: e.id,
         source: e.source,
         target: e.target,
@@ -32,11 +39,10 @@ async function saveFlow() {
       })),
     }
 
-    const response = await fetch('http://localhost:3001/api/workflows/deploy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
+    // Use PUT to update if we have an id, POST to create
+    const response = props.flowId
+      ? await api.workflows.update(props.flowId, payload)
+      : await api.workflows.create(payload)
 
     if (!response.ok) {
       const err = await response.json()
@@ -45,7 +51,7 @@ async function saveFlow() {
 
     const result = await response.json()
     saveStatus.value = 'success'
-    store.addLog('system', 'System', 'success', `✓ Workflow saved: ${result.workflow.id}`)
+    store.addLog('system', 'System', 'success', `✓ Workflow saved: ${(result.workflow || result).id}`)
   } catch (error: any) {
     saveStatus.value = 'error'
     store.addLog('system', 'System', 'error', `Save failed: ${error.message}`)
@@ -56,18 +62,19 @@ async function saveFlow() {
     saveStatus.value = 'idle'
   }, 2000)
 }
+
+const workflowName = ref('My Workflow')
 </script>
 
 <template>
   <header class="topbar">
     <div class="topbar-left">
-      <div class="logo">
-        <span class="logo-icon">⚡</span>
-        <span class="logo-text">FlowCraft</span>
-      </div>
+      <button class="back-btn" @click="router.push('/')" title="Back to flows">
+        ← Flows
+      </button>
     </div>
     <div class="topbar-center">
-      <input class="workflow-name" type="text" value="My Workflow" placeholder="Workflow name" />
+      <input class="workflow-name" type="text" v-model="workflowName" placeholder="Workflow name" />
     </div>
     <div class="topbar-right">
       <button class="btn btn-secondary" @click="store.clearWorkflow()">
@@ -111,20 +118,20 @@ async function saveFlow() {
   gap: 16px;
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.back-btn {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.logo-icon {
-  font-size: 24px;
-}
-
-.logo-text {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-primary);
+.back-btn:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 .topbar-center {
