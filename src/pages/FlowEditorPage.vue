@@ -14,6 +14,9 @@ const store = useWorkflowStore()
 const flowId = route.params.id as string | undefined
 
 onMounted(async () => {
+  // Always clear first — prevents stale nodes from a previous flow
+  store.clearWorkflow()
+
   if (flowId) {
     try {
       const res = await api.workflows.get(flowId)
@@ -21,8 +24,6 @@ onMounted(async () => {
       const data = await res.json()
       const wf = data.workflow || data
 
-      // Load nodes and edges into the store
-      store.clearWorkflow()
       if (wf.nodes) store.nodes.push(...wf.nodes)
       if (wf.edges) store.edges.push(...wf.edges)
     } catch (e: any) {
