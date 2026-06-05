@@ -35,6 +35,13 @@ function getCategoryColor(category: NodeCategory): string {
 
 const hasSources = props.data.category !== 'trigger'
 const hasTargets = props.data.category !== 'output'
+
+const switchCases = computed(() => {
+  if (props.data.type === 'switch') {
+    return props.data.config?.cases || 3
+  }
+  return 0
+})
 </script>
 
 <template>
@@ -91,32 +98,21 @@ const hasTargets = props.data.category !== 'output'
       <span class="handle-label handle-label-false">F</span>
     </template>
 
-    <!-- Switch: numbered handles -->
+    <!-- Switch: dynamic numbered handles -->
     <template v-if="data.type === 'switch'">
-      <Handle
-        type="source"
-        :position="Position.Right"
-        id="0"
-        class="handle handle-switch"
-        :style="{ top: '25%' }"
-      />
-      <span class="handle-label handle-label-0">1</span>
-      <Handle
-        type="source"
-        :position="Position.Right"
-        id="1"
-        class="handle handle-switch"
-        :style="{ top: '50%' }"
-      />
-      <span class="handle-label handle-label-1">2</span>
-      <Handle
-        type="source"
-        :position="Position.Right"
-        id="2"
-        class="handle handle-switch"
-        :style="{ top: '75%' }"
-      />
-      <span class="handle-label handle-label-2">3</span>
+      <template v-for="i in switchCases" :key="i">
+        <Handle
+          type="source"
+          :position="Position.Right"
+          :id="String(i - 1)"
+          class="handle handle-switch"
+          :style="{ top: `${(i / (switchCases + 1)) * 100}%` }"
+        />
+        <span
+          class="handle-label handle-label-switch"
+          :style="{ top: `calc(${(i / (switchCases + 1)) * 100}% - 7px)` }"
+        >{{ i }}</span>
+      </template>
     </template>
   </div>
 </template>
@@ -325,18 +321,7 @@ const hasTargets = props.data.category !== 'output'
   color: var(--color-danger);
 }
 
-.handle-label-0 {
-  top: calc(25% - 7px);
-  color: var(--color-node-condition);
-}
-
-.handle-label-1 {
-  top: calc(50% - 7px);
-  color: var(--color-node-condition);
-}
-
-.handle-label-2 {
-  top: calc(75% - 7px);
+.handle-label-switch {
   color: var(--color-node-condition);
 }
 </style>

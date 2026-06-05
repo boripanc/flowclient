@@ -17,7 +17,11 @@ export interface LogEntry {
 export const useWorkflowStore = defineStore('workflow', () => {
   const nodes = ref<any[]>([])
   const edges = ref<Edge[]>([])
-  const selectedNode = ref<any>(null)
+  const selectedNodeId = ref<string | null>(null)
+  const selectedNode = computed(() => {
+    if (!selectedNodeId.value) return null
+    return nodes.value.find((n: any) => n.id === selectedNodeId.value) || null
+  })
   const isExecuting = ref(false)
   const logs = ref<LogEntry[]>([])
   const triggerInput = ref('')
@@ -65,7 +69,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
         category: nodeType.category,
         icon: nodeType.icon,
         description: nodeType.description,
-        config: {},
+        config: nodeType.type === 'switch' ? { cases: 3, caseLabels: ['', '', ''] } : {},
       },
     }
     nodes.value.push(newNode)
@@ -77,8 +81,8 @@ export const useWorkflowStore = defineStore('workflow', () => {
     edges.value = edges.value.filter(
       (e) => e.source !== nodeId && e.target !== nodeId
     )
-    if (selectedNode.value?.id === nodeId) {
-      selectedNode.value = null
+    if (selectedNodeId.value === nodeId) {
+      selectedNodeId.value = null
     }
   }
 
@@ -95,12 +99,18 @@ export const useWorkflowStore = defineStore('workflow', () => {
     edges.value = edges.value.filter((e) => e.id !== edgeId)
   }
 
+  function removeEdgesByHandle(nodeId: string, handleId: string) {
+    edges.value = edges.value.filter(
+      (e) => !(e.source === nodeId && e.sourceHandle === handleId)
+    )
+  }
+
   function selectNode(node: Node<WorkflowNodeData> | null) {
-    selectedNode.value = node
+    selectedNodeId.value = node?.id || null
   }
 
   function updateNodeData(nodeId: string, data: Partial<WorkflowNodeData>) {
-    const node = nodes.value.find((n) => n.id === nodeId)
+    const node = nodes.value.find((n: any) => n.id === nodeId)
     if (node && node.data) {
       node.data = { ...node.data, ...data } as WorkflowNodeData
     }
@@ -109,7 +119,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
   function clearWorkflow() {
     nodes.value = []
     edges.value = []
-    selectedNode.value = null
+    selectedNodeId.value = null
     nodeIdCounter = 0
   }
 
@@ -300,6 +310,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
     removeNode,
     addEdge,
     removeEdge,
+    removeEdgesByHandle,
     selectNode,
     updateNodeData,
     clearWorkflow,

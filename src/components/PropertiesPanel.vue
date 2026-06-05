@@ -7,6 +7,20 @@ const store = useWorkflowStore()
 
 const node = computed(() => store.selectedNode)
 
+const switchCases = computed(() => {
+  if (node.value?.data?.type === 'switch') {
+    return node.value.data.config?.cases || 3
+  }
+  return 0
+})
+
+const switchCaseLabels = computed(() => {
+  if (node.value?.data?.type === 'switch') {
+    return node.value.data.config?.caseLabels || []
+  }
+  return []
+})
+
 function getCategoryColor(category: NodeCategory): string {
   const colors: Record<NodeCategory, string> = {
     trigger: 'var(--color-node-trigger)',
@@ -21,6 +35,43 @@ function updateLabel(event: Event) {
   const target = event.target as HTMLInputElement
   if (node.value) {
     store.updateNodeData(node.value.id, { label: target.value })
+  }
+}
+
+function addSwitchCase() {
+  if (node.value && switchCases.value < 10) {
+    const labels = [...switchCaseLabels.value]
+    labels.push('')
+    store.updateNodeData(node.value.id, {
+      config: { ...node.value.data.config, cases: switchCases.value + 1, caseLabels: labels }
+    })
+  }
+}
+
+function removeSwitchCase() {
+  if (node.value && switchCases.value > 2) {
+    const handleId = String(switchCases.value - 1)
+    store.removeEdgesByHandle(node.value.id, handleId)
+    const labels = [...switchCaseLabels.value]
+    labels.pop()
+    store.updateNodeData(node.value.id, {
+      config: { ...node.value.data.config, cases: switchCases.value - 1, caseLabels: labels }
+    })
+  }
+}
+
+function updateCaseLabel(index: number, event: Event) {
+  const target = event.target as HTMLInputElement
+  if (node.value) {
+    const labels = [...switchCaseLabels.value]
+    // Ensure array is long enough
+    while (labels.length < switchCases.value) {
+      labels.push('')
+    }
+    labels[index] = target.value
+    store.updateNodeData(node.value.id, {
+      config: { ...node.value.data.config, caseLabels: labels }
+    })
   }
 }
 
@@ -81,7 +132,35 @@ function closePanel() {
 
       <div class="divider"></div>
 
-      <div class="form-group">
+      <!-- Switch case configuration -->
+      <div class="form-group" v-if="node.data.type === 'switch'">
+        <label class="form-label">Output Cases</label>
+        <div class="switch-config">
+          <div class="switch-cases-header">
+            <span class="cases-count">{{ switchCases }} cases</span>
+            <div class="cases-actions">
+              <button class="btn-icon" @click="removeSwitchCase" :disabled="switchCases <= 2" title="Remove case">−</button>
+              <button class="btn-icon" @click="addSwitchCase" :disabled="switchCases >= 10" title="Add case">+</button>
+            </div>
+          </div>
+          <div class="switch-cases-list">
+            <div class="switch-case-item" v-for="i in switchCases" :key="i">
+              <span class="case-dot"></span>
+              <span class="case-index">{{ i }}</span>
+              <input
+                type="text"
+                class="case-input"
+                :value="switchCaseLabels[i - 1] || ''"
+                :placeholder="`Condition for case ${i}`"
+                @input="updateCaseLabel(i - 1, $event)"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Generic config for non-switch nodes -->
+      <div class="form-group" v-else>
         <label class="form-label">Configuration</label>
         <div class="config-placeholder">
           <span>⚙️</span>
@@ -264,5 +343,111 @@ function closePanel() {
 
 .btn-danger:hover {
   background: #fee2e2;
+}
+
+.switch-config {
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+.switch-cases-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.cases-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.cases-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.switch-cases-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.switch-case-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+}
+
+.case-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-node-condition);
+  flex-shrink: 0;
+}
+
+.case-index {
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  width: 16px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.case-input {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  transition: border-color 0.2s;
+  min-width: 0;
+}
+
+.case-input:focus {
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+.case-input::placeholder {
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 </style>
