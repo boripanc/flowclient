@@ -19,4 +19,17 @@ export const api = {
     delete: (id: string) =>
       fetch(`${BASE_URL}/api/workflows/${id}`, { method: 'DELETE' }),
   },
+  engines: {
+    list: () => fetch(`${BASE_URL}/api/engines`),
+    create: (payload: unknown) =>
+      fetch(`${BASE_URL}/api/engines`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }),
+    delete: (id: string) =>
+      fetch(`${BASE_URL}/api/engines/${id}`, { method: 'DELETE' }),
+  },
 }
+
+export { BASE_URL }

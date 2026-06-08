@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import WorkflowEditor from '@/components/WorkflowEditor.vue'
 import Sidebar from '@/components/Sidebar.vue'
@@ -13,10 +13,13 @@ const route = useRoute()
 const store = useWorkflowStore()
 const flowId = route.params.id as string | undefined
 
-onMounted(async () => {
-  // Always clear first — prevents stale nodes from a previous flow
-  store.clearWorkflow()
+// Clear immediately in setup (synchronous) — before WorkflowEditor mounts
+// and reads store.nodes for the first time
+store.clearWorkflow()
 
+const editorKey = computed(() => route.fullPath)
+
+onMounted(async () => {
   if (flowId) {
     try {
       const res = await api.workflows.get(flowId)
@@ -39,7 +42,7 @@ onMounted(async () => {
     <div class="app-content">
       <Sidebar />
       <div class="main-area">
-        <WorkflowEditor />
+        <WorkflowEditor :key="editorKey" />
         <ExecutionPanel />
       </div>
       <PropertiesPanel v-if="store.selectedNode" />

@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/api'
+import EnginePanel from '@/components/EnginePanel.vue'
 
 interface WorkflowSummary {
   id: string
@@ -79,71 +80,81 @@ onMounted(fetchFlows)
     </header>
 
     <main class="page-content">
-      <div class="content-header">
-        <h1 class="page-title">Workflows</h1>
-        <button class="btn btn-secondary" @click="fetchFlows" :disabled="isLoading">
-          {{ isLoading ? 'Loading...' : '↻ Refresh' }}
-        </button>
-      </div>
+      <div class="page-layout">
+        <!-- Left: Workflows -->
+        <div class="workflows-section">
+          <div class="content-header">
+            <h1 class="page-title">Workflows</h1>
+            <button class="btn btn-secondary" @click="fetchFlows" :disabled="isLoading">
+              {{ isLoading ? 'Loading...' : '↻ Refresh' }}
+            </button>
+          </div>
 
-      <!-- Loading -->
-      <div v-if="isLoading && flows.length === 0" class="state-block">
-        <div class="spinner"></div>
-        <p>Loading workflows...</p>
-      </div>
+          <!-- Loading -->
+          <div v-if="isLoading && flows.length === 0" class="state-block">
+            <div class="spinner"></div>
+            <p>Loading workflows...</p>
+          </div>
 
-      <!-- Error -->
-      <div v-else-if="error" class="state-block error-state">
-        <span class="state-icon">⚠️</span>
-        <p>{{ error }}</p>
-        <button class="btn btn-secondary" @click="fetchFlows">Try again</button>
-      </div>
+          <!-- Error -->
+          <div v-else-if="error" class="state-block error-state">
+            <span class="state-icon">⚠️</span>
+            <p>{{ error }}</p>
+            <button class="btn btn-secondary" @click="fetchFlows">Try again</button>
+          </div>
 
-      <!-- Empty -->
-      <div v-else-if="flows.length === 0" class="state-block empty-state">
-        <span class="state-icon">🎯</span>
-        <h3>No workflows yet</h3>
-        <p>Create your first workflow to get started.</p>
-        <button class="btn btn-primary" @click="openEditor()">+ New Flow</button>
-      </div>
+          <!-- Empty -->
+          <div v-else-if="flows.length === 0" class="state-block empty-state">
+            <span class="state-icon">🎯</span>
+            <h3>No workflows yet</h3>
+            <p>Create your first workflow to get started.</p>
+            <button class="btn btn-primary" @click="openEditor()">+ New Flow</button>
+          </div>
 
-      <!-- Flow grid -->
-      <div v-else class="flow-grid">
-        <div
-          class="flow-card"
-          v-for="flow in flows"
-          :key="flow.id"
-          @click="openEditor(flow.id)"
-        >
-          <div class="card-header">
-            <div class="card-icon">⚡</div>
-            <div class="card-actions" @click.stop>
-              <button
-                class="icon-btn delete-btn"
-                :disabled="deletingId === flow.id"
-                @click="deleteFlow(flow.id)"
-                title="Delete"
-              >
-                {{ deletingId === flow.id ? '...' : '🗑️' }}
-              </button>
+          <!-- Flow grid -->
+          <div v-else class="flow-grid">
+            <div
+              class="flow-card"
+              v-for="flow in flows"
+              :key="flow.id"
+              @click="openEditor(flow.id)"
+            >
+              <div class="card-header">
+                <div class="card-icon">⚡</div>
+                <div class="card-actions" @click.stop>
+                  <button
+                    class="icon-btn delete-btn"
+                    :disabled="deletingId === flow.id"
+                    @click="deleteFlow(flow.id)"
+                    title="Delete"
+                  >
+                    {{ deletingId === flow.id ? '...' : '🗑️' }}
+                  </button>
+                </div>
+              </div>
+
+              <div class="card-body">
+                <h3 class="card-title">{{ flow.name || 'Untitled' }}</h3>
+                <p class="card-id">ID: {{ flow.id }}</p>
+              </div>
+
+              <div class="card-meta">
+                <span class="meta-badge">{{ flow.nodeCount ?? '—' }} nodes</span>
+                <span class="meta-badge">{{ flow.edgeCount ?? '—' }} edges</span>
+              </div>
+
+              <div class="card-footer">
+                <span class="card-date" v-if="flow.updatedAt">Updated {{ formatDate(flow.updatedAt) }}</span>
+                <span class="card-date" v-else-if="flow.createdAt">Created {{ formatDate(flow.createdAt) }}</span>
+              </div>
             </div>
           </div>
-
-          <div class="card-body">
-            <h3 class="card-title">{{ flow.name || 'Untitled' }}</h3>
-            <p class="card-id">ID: {{ flow.id }}</p>
-          </div>
-
-          <div class="card-meta">
-            <span class="meta-badge">{{ flow.nodeCount ?? '—' }} nodes</span>
-            <span class="meta-badge">{{ flow.edgeCount ?? '—' }} edges</span>
-          </div>
-
-          <div class="card-footer">
-            <span class="card-date" v-if="flow.updatedAt">Updated {{ formatDate(flow.updatedAt) }}</span>
-            <span class="card-date" v-else-if="flow.createdAt">Created {{ formatDate(flow.createdAt) }}</span>
-          </div>
         </div>
+
+        <!-- Right: Engine panel -->
+        <aside class="engines-section">
+          <EnginePanel />
+        </aside>
       </div>
     </main>
   </div>
@@ -190,10 +201,32 @@ onMounted(fetchFlows)
 
 .page-content {
   flex: 1;
-  max-width: 1200px;
+  max-width: 1400px;
   width: 100%;
   margin: 0 auto;
   padding: 32px 24px;
+}
+
+.page-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .page-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.workflows-section {
+  min-width: 0;
+}
+
+.engines-section {
+  position: sticky;
+  top: 24px;
 }
 
 .content-header {

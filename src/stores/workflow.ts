@@ -121,6 +121,9 @@ export const useWorkflowStore = defineStore('workflow', () => {
     edges.value = []
     selectedNodeId.value = null
     nodeIdCounter = 0
+    logs.value = []
+    nodeStatuses.value = {}
+    isExecuting.value = false
   }
 
   function getNextNodes(nodeId: string): Node<WorkflowNodeData>[] {
